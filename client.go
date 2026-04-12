@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var QueryTimeout time.Duration = time.Duration(15) * time.Second
+
 const DefaultAPIURL = "https://securepay.tinkoff.ru/v2"
 
 type apiEndpoint = string
@@ -41,7 +43,7 @@ func NewClient(baseURL string, httpClient *http.Client) *Client {
 	baseURL = strings.TrimRight(baseURL, "/")
 	if httpClient == nil {
 		httpClient = &http.Client{
-			Timeout: 15 * time.Second,
+			Timeout: QueryTimeout,
 		}
 	}
 
