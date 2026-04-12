@@ -1,6 +1,12 @@
 package paytbank
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
+
+// Отменить платеж
+// https://developer.tbank.ru/eacq/api/cancel
 
 const (
 	CancelEndpoint apiEndpoint = "Cancel"
@@ -23,7 +29,20 @@ type TCancelResponse struct {
 
 func (c *Client) Cancel(ctx context.Context, p *TCancel) (TCancelResponse, error) {
 	respPayload := TCancelResponse{}
-	if err := c.apiExecute(ctx, CancelEndpoint, p, &respPayload); err != nil {
+
+	req := *p
+
+	if req.TerminalKey == "" {
+		req.TerminalKey = c.terminalKey
+	}
+
+	token, err := BuildRequestToken(&req, c.password)
+	if err != nil {
+		return respPayload, fmt.Errorf("BuildRequestToken(): %v", err)
+	}
+	req.Token = token
+
+	if err := c.apiExecute(ctx, CancelEndpoint, &req, &respPayload); err != nil {
 		return respPayload, err
 	}
 

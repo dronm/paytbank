@@ -1,8 +1,12 @@
 package paytbank
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // Инициировать платеж
+// https://developer.tbank.ru/eacq/api/init
 
 const (
 	InitEndpoint apiEndpoint = "Init"
@@ -28,7 +32,20 @@ type TInitResponse struct {
 
 func (c *Client) Init(ctx context.Context, p *TInit) (TInitResponse, error) {
 	respPayload := TInitResponse{}
-	if err := c.apiExecute(ctx, InitEndpoint, p, &respPayload); err != nil {
+
+	req := *p
+
+	if req.TerminalKey == "" {
+		req.TerminalKey = c.terminalKey
+	}
+
+	token, err := BuildRequestToken(&req, c.password)
+	if err != nil {
+		return respPayload, fmt.Errorf("BuildRequestToken(): %v", err)
+	}
+	req.Token = token
+
+	if err := c.apiExecute(ctx, InitEndpoint, &req, &respPayload); err != nil {
 		return respPayload, err
 	}
 
@@ -38,3 +55,4 @@ func (c *Client) Init(ctx context.Context, p *TInit) (TInitResponse, error) {
 func (p *TInit) APIExecute(ctx context.Context) (TInitResponse, error) {
 	return DefaultClient.Init(ctx, p)
 }
+

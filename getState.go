@@ -1,8 +1,12 @@
 package paytbank
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
-//Получить статус платежа
+// Получить статус платежа
+// https://developer.tbank.ru/eacq/api/get-state
 
 const (
 	GetStateEndpoint apiEndpoint = "GetState"
@@ -27,8 +31,20 @@ type TGetStateResponse struct {
 
 func (c *Client) GetState(ctx context.Context, p *TGetState) (TGetStateResponse, error) {
 	respPayload := TGetStateResponse{}
-	err := c.apiExecute(ctx, GetStateEndpoint, p, &respPayload)
+
+	req := *p
+
+	if req.TerminalKey == "" {
+		req.TerminalKey = c.terminalKey
+	}
+
+	token, err := BuildRequestToken(&req, c.password)
 	if err != nil {
+		return respPayload, fmt.Errorf("BuildRequestToken(): %v", err)
+	}
+	req.Token = token
+
+	if err := c.apiExecute(ctx, GetStateEndpoint, &req, &respPayload); err != nil {
 		return respPayload, err
 	}
 

@@ -10,6 +10,8 @@ import (
 )
 
 func TestClientGetState_Success(t *testing.T) {
+	var expectedToken string
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("unexpected method: got %s, want %s", r.Method, http.MethodPost)
@@ -40,7 +42,7 @@ func TestClientGetState_Success(t *testing.T) {
 			t.Fatalf("unexpected PaymentID: got %q", reqBody.PaymentID)
 		}
 
-		if reqBody.Token != "token-value" {
+		if reqBody.Token != expectedToken {
 			t.Fatalf("unexpected Token: got %q", reqBody.Token)
 		}
 
@@ -71,12 +73,20 @@ func TestClientGetState_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
-
 	req := &TGetState{
 		TerminalKey: "term-key",
 		PaymentID:   "payment-123",
 		Token:       "token-value",
+	}
+
+	password := "test-password"
+
+	client := NewClient(server.URL, server.Client(), req.TerminalKey, password)
+
+	var err error
+	expectedToken, err = BuildRequestToken(req, password)
+	if err != nil {
+		t.Fatalf("BuildRequestToken(): %v", err)
 	}
 
 	resp, err := client.GetState(context.Background(), req)
@@ -127,7 +137,7 @@ func TestClientGetState_HTTPStatusError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	req := &TGetState{
 		TerminalKey: "term-key",
@@ -152,7 +162,7 @@ func TestClientGetState_InvalidJSONResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	req := &TGetState{
 		TerminalKey: "term-key",
@@ -204,7 +214,7 @@ func TestTGetStateAPIExecute_UsesDefaultClient(t *testing.T) {
 	}))
 	defer server.Close()
 
-	DefaultClient = NewClient(server.URL, server.Client())
+	DefaultClient = NewClient(server.URL, server.Client(), "", "")
 
 	req := &TGetState{
 		TerminalKey: "term-key",
@@ -236,7 +246,7 @@ func TestClientGetState_ContextCanceled(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

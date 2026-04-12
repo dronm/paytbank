@@ -10,6 +10,8 @@ import (
 )
 
 func TestClientInit_Success(t *testing.T) {
+	var expectedToken string
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("unexpected method: got %s, want %s", r.Method, http.MethodPost)
@@ -40,7 +42,7 @@ func TestClientInit_Success(t *testing.T) {
 			t.Fatalf("unexpected Amount: got %d", reqBody.Amount)
 		}
 
-		if reqBody.Token != "token-value" {
+		if reqBody.Token != expectedToken {
 			t.Fatalf("unexpected Token: got %q", reqBody.Token)
 		}
 
@@ -72,16 +74,23 @@ func TestClientInit_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
-
 	req := &TInit{
 		TerminalKey: "term-key",
 		Amount:      125500,
-		Token:       "token-value",
 		OrderID:     "order-123",
 		Description: "test payment",
 	}
 
+	password := "test-password"
+
+	client := NewClient(server.URL, server.Client(), req.TerminalKey, password)
+
+	var err error
+	expectedToken, err = BuildRequestToken(req, password)
+	if err != nil {
+		t.Fatalf("BuildRequestToken(): %v", err)
+	}
+	
 	resp, err := client.Init(context.Background(), req)
 	if err != nil {
 		t.Fatalf("client.Init() error = %v", err)
@@ -122,7 +131,7 @@ func TestClientInit_HTTPStatusError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	req := &TInit{
 		TerminalKey: "term-key",
@@ -148,7 +157,7 @@ func TestClientInit_InvalidJSONResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	req := &TInit{
 		TerminalKey: "term-key",
@@ -191,7 +200,7 @@ func TestTInitAPIExecute_UsesDefaultClient(t *testing.T) {
 	}))
 	defer server.Close()
 
-	DefaultClient = NewClient(server.URL, server.Client())
+	DefaultClient = NewClient(server.URL, server.Client(), "", "")
 
 	req := &TInit{
 		TerminalKey: "term-key",
@@ -220,7 +229,7 @@ func TestClientInit_ContextCanceled(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

@@ -33,13 +33,15 @@ type BasePayResponse struct {
 }
 
 type Client struct {
-	baseURL    string
-	httpClient *http.Client
+	baseURL     string
+	httpClient  *http.Client
+	terminalKey string
+	password    string
 }
 
-var DefaultClient = NewClient(DefaultAPIURL, nil)
+var DefaultClient = NewClient(DefaultAPIURL, nil, "", "")
 
-func NewClient(baseURL string, httpClient *http.Client) *Client {
+func NewClient(baseURL string, httpClient *http.Client, terminalKey string, password string) *Client {
 	baseURL = strings.TrimRight(baseURL, "/")
 	if httpClient == nil {
 		httpClient = &http.Client{
@@ -48,8 +50,10 @@ func NewClient(baseURL string, httpClient *http.Client) *Client {
 	}
 
 	return &Client{
-		baseURL:    baseURL,
-		httpClient: httpClient,
+		baseURL:     baseURL,
+		httpClient:  httpClient,
+		terminalKey: terminalKey,
+		password:    password,
 	}
 }
 

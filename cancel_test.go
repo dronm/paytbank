@@ -10,6 +10,8 @@ import (
 )
 
 func TestClientCancel_Success(t *testing.T) {
+	var expectedToken string
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("unexpected method: got %s, want %s", r.Method, http.MethodPost)
@@ -36,7 +38,7 @@ func TestClientCancel_Success(t *testing.T) {
 			t.Fatalf("unexpected TerminalKey: got %q", reqBody.TerminalKey)
 		}
 
-		if reqBody.Token != "token-value" {
+		if reqBody.Token != expectedToken {
 			t.Fatalf("unexpected Token: got %q", reqBody.Token)
 		}
 
@@ -68,13 +70,21 @@ func TestClientCancel_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
-
 	req := &TCancel{
 		TerminalKey: "term-key",
 		Token:       "token-value",
 		PaymentID:   "payment-123",
 		Amount:      150000,
+	}
+
+	password := "test-password"
+
+	client := NewClient(server.URL, server.Client(), req.TerminalKey, password)
+
+	var err error
+	expectedToken, err = BuildRequestToken(req, password)
+	if err != nil {
+		t.Fatalf("BuildRequestToken(): %v", err)
 	}
 
 	resp, err := client.Cancel(context.Background(), req)
@@ -125,7 +135,7 @@ func TestClientCancel_HTTPStatusError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	req := &TCancel{
 		TerminalKey: "term-key",
@@ -151,7 +161,7 @@ func TestClientCancel_InvalidJSONResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	req := &TCancel{
 		TerminalKey: "term-key",
@@ -201,7 +211,7 @@ func TestTCancelAPIExecute_UsesDefaultClient(t *testing.T) {
 	}))
 	defer server.Close()
 
-	DefaultClient = NewClient(server.URL, server.Client())
+	DefaultClient = NewClient(server.URL, server.Client(), "", "")
 
 	req := &TCancel{
 		TerminalKey: "term-key",
@@ -230,7 +240,7 @@ func TestClientCancel_ContextCanceled(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, server.Client())
+	client := NewClient(server.URL, server.Client(), "", "")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
