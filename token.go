@@ -88,15 +88,15 @@ func parseJSONTag(tag string) (string, bool) {
 	parts := strings.Split(tag, ",")
 	name := parts[0]
 
-	omitEmpty := false
+	omitZero := false
 	for _, p := range parts[1:] {
-		if p == "omitempty" {
-			omitEmpty = true
-			break
+		switch p {
+		case "omitempty", "omitzero":
+			omitZero = true
 		}
 	}
 
-	return name, omitEmpty
+	return name, omitZero
 }
 
 func shouldSkipField(v reflect.Value, omitEmpty bool) bool {

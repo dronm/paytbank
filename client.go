@@ -17,6 +17,7 @@ import (
 var QueryTimeout time.Duration = time.Duration(15) * time.Second
 
 const DefaultAPIURL = "https://securepay.tinkoff.ru/v2"
+const TestAPIURL = "https://rest-api-test.tinkoff.ru/v2"
 
 type apiEndpoint = string
 

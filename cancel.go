@@ -16,8 +16,8 @@ const (
 type TCancel struct {
 	TerminalKey string `json:"TerminalKey"`
 	Token       string `json:"Token"`
-	PaymentID   string `json:"PaymentID"`
-	Amount      int64  `json:"Amount"`
+	PaymentID   string `json:"PaymentId"`
+	Amount      *int64  `json:"Amount,omitzero"`
 }
 
 type TCancelResponse struct {

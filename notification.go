@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+// Уведомления об операциях
+// https://developer.tbank.ru/eacq/intro/developer/notification
+
 type PaymentStatus string
 
 const (
@@ -68,8 +71,9 @@ func BuildNotificationToken(raw map[string]any, password string) string {
 			} else {
 				data[k] = "false"
 			}
-		case float64:
-			panic("float64 in token source: decode JSON with UseNumber to avoid precision loss")
+		case float64, float32:
+			// panic(fmt.Sprintf("float64 in token source for field %s: decode JSON with UseNumber to avoid precision loss", k))
+			data[k] = fmt.Sprintf("%f", val)
 		default:
 			data[k] = fmt.Sprint(val)
 		}
